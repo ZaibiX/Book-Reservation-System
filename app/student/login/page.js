@@ -2,6 +2,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import axios from "axios";
+import {signIn} from "next-auth/react";
 
 export default function StudentLogin() {
   const [formData, setFormData] = useState({
@@ -64,9 +66,35 @@ export default function StudentLogin() {
     setLoading(true)
     
     // Simulate login process
-    setTimeout(() => {
+    setTimeout(async() => {
       console.log('Student login:', formData)
-      router.push('/student/dashboard')
+      try{
+        // const res= await axios.post("/api/login",formData);
+        signIn("credentials",{
+          email:formData.email,
+          password:formData.password,
+          // redirect:false,
+          callbackUrl:"/student/dashboard"
+        });
+        // console.log(res);
+      }
+      catch(err)
+      {
+        // console.log(err)
+        if (err.response)
+        {
+          alert(err.response.data.message);
+        }
+        else
+        {
+           console.error("Error: ", err.message);
+        }
+        
+      }
+
+      setLoading(false)
+
+      // router.push('/student/dashboard')
     }, 1000)
   }
 

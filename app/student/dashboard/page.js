@@ -24,7 +24,8 @@ export default function StudentDashboard() {
 
   const containerStyle = {
     minHeight: '100vh',
-    backgroundColor: '#f8f9fa'
+    backgroundColor: '#f8f9fa',
+    // backgroundColor: 'yellow'
   }
 
   const headerStyle = {
@@ -43,13 +44,16 @@ export default function StudentDashboard() {
   }
 
   const mainContentStyle = {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '20px',
-    display: 'grid',
+  maxWidth: '1200px',
+  margin: '0 auto',
+  padding: '20px',
+  display: 'grid',
+  gridTemplateColumns: '1fr',
+  gap: '30px',
+  @media (min-width: 768px): {
     gridTemplateColumns: '2fr 1fr',
-    gap: '30px'
-  }
+  },
+};
 
   const cardStyle = {
     backgroundColor: 'white',
