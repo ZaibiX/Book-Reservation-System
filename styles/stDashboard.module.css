@@ -1,0 +1,64 @@
+/* styles.module.css */
+
+.containerStyle {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  /* background-color: pink; */
+}
+
+.headerStyle {
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 20px 0;
+}
+
+.headerContentStyle {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mainContentStyle {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+}
+
+/* Responsive: one column on small devices */
+@media (max-width: 768px) {
+  .mainContentStyle {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cardStyle {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.inputStyle {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.buttonStyle {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
