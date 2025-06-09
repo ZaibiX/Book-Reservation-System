@@ -14,31 +14,42 @@ const handler = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials, req) {
+      
+async authorize(credentials, req) {
   const { email, password } = credentials;
+
   try {
-    const result = await db.query("SELECT id, name_id, email, password FROM Student WHERE email = $1", [email]);
+    // 1. Fetch user by email
+    const result = await db.query(
+      "SELECT id, name_id, email, password FROM Student WHERE email = $1",
+      [email]
+    );
     const user = result.rows[0];
-    
+
     if (!user) return null;
 
-    // Compare plaintext password (you should hash it in real apps)
-    if (user.password !== password) return null;
+    // 2. Compare plaintext password with hashed password
+    const isMatch = await compare(password, user.password);
+    if (!isMatch) return null;
 
-    const nameId = user.name_id;
-    const result2 = await db.query("SELECT fname, lname FROM Name WHERE id = $1", [nameId]);
+    // 3. Fetch name from Name table
+    const result2 = await db.query(
+      "SELECT fname, lname FROM Name WHERE id = $1",
+      [user.name_id]
+    );
     const name = result2.rows[0];
-    console.log("suc logined ")
+
+    // 4. Return user session object
     return {
       id: user.id,
       email: user.email,
       name: `${name.fname} ${name.lname}`,
     };
   } catch (err) {
-    console.error('Authorize error:', err);
+    console.error("Authorize error:", err);
     return null;
   }
-},
+}
 
     }),
   ],

@@ -2,10 +2,13 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import axios from "axios";
+import { signIn } from "next-auth/react";
 
 export default function StudentRegister() {
   const [formData, setFormData] = useState({
-    name: '',
+    fName: '',
+    lName:'',
     email: '',
     password: '',
     confirmPassword: ''
@@ -78,7 +81,7 @@ export default function StudentRegister() {
   const validateForm = () => {
     const newErrors = {}
     
-    if (!formData.name.trim()) {
+    if (!formData.fName.trim()) {
       newErrors.name = 'Name is required'
     }
     
@@ -114,11 +117,23 @@ export default function StudentRegister() {
     setErrors({})
     
     // Simulate registration process
-    setTimeout(() => {
-      console.log('Student registration:', formData)
-      alert('Registration successful! Please login.')
-      router.push('/student/login')
-    }, 1000)
+    const res = await axios.post("/api/register/",{formData:formData})
+    // console.log("res  lll",res," now ok flag", res.data.registerSuccess)
+
+    if(res.data.registerSuccess)
+    {
+            // ✅ Auto sign-in after successful registration
+      await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        callbackUrl: "/student/dashboard", // redirect after login
+      });
+    }
+    else{
+      alert("Registeration Error");
+    }
+
+    setLoading(false);
   }
 
   return (
@@ -132,15 +147,24 @@ export default function StudentRegister() {
         <form onSubmit={handleSubmit}>
           <input
             type="text"
-            name="name"
-            placeholder="Full Name"
+            name="fName"
+            placeholder="First Name"
             value={formData.name}
             onChange={handleInputChange}
             style={inputStyle}
             required
           />
           {errors.name && <div style={errorStyle}>{errors.name}</div>}
-          
+          <input
+            type="text"
+            name="lName"
+            placeholder="Last Name"
+            value={formData.name}
+            onChange={handleInputChange}
+            style={inputStyle}
+            required
+          />
+          {errors.name && <div style={errorStyle}>{errors.name}</div>}
           <input
             type="email"
             name="email"

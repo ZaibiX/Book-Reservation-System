@@ -10,6 +10,61 @@ export default function StudentDashboard() {
 
   // Mock data setup omitted for brevity...
 
+
+  useEffect(() => {
+  // Mock book data
+  const mockBooks = [
+    {
+      id: 1,
+      name: "Clean Code",
+      authors: ["Robert C. Martin"],
+      isbn: "9780132350884",
+      genre: "Programming",
+      quantity: 3,
+      reserved: false,
+    },
+    {
+      id: 2,
+      name: "Introduction to Algorithms",
+      authors: ["Thomas H. Cormen", "Charles E. Leiserson"],
+      isbn: "9780262033848",
+      genre: "Computer Science",
+      quantity: 1,
+      reserved: false,
+    },
+    {
+      id: 3,
+      name: "JavaScript: The Good Parts",
+      authors: ["Douglas Crockford"],
+      isbn: "9780596517748",
+      genre: "Programming",
+      quantity: 0,
+      reserved: false,
+    },
+    {
+      id: 4,
+      name: "Artificial Intelligence: A Modern Approach",
+      authors: ["Stuart Russell", "Peter Norvig"],
+      isbn: "9780136042594",
+      genre: "Computer Science",
+      quantity: 2,
+      reserved: true,
+    },
+    {
+      id: 5,
+      name: "You Don’t Know JS",
+      authors: ["Kyle Simpson"],
+      isbn: "9781491904244",
+      genre: "Programming",
+      quantity: 5,
+      reserved: false,
+    },
+  ];
+
+  setBooks(mockBooks);
+}, []);
+
+
   const filteredBooks = books.filter((book) => {
     const matchesSearch =
       book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
