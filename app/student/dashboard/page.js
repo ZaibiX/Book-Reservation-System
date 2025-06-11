@@ -1,69 +1,74 @@
 "use client";
 import { useState, useEffect } from "react";
 import styles from "../../../styles/stDashboard.module.css";
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function StudentDashboard() {
   const [books, setBooks] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("All");
+  const { data: session, status } = useSession();
 
+  const router = useRouter();
   // Mock data setup omitted for brevity...
 
-
   useEffect(() => {
-  // Mock book data
-  const mockBooks = [
-    {
-      id: 1,
-      name: "Clean Code",
-      authors: ["Robert C. Martin"],
-      isbn: "9780132350884",
-      genre: "Programming",
-      quantity: 3,
-      reserved: false,
-    },
-    {
-      id: 2,
-      name: "Introduction to Algorithms",
-      authors: ["Thomas H. Cormen", "Charles E. Leiserson"],
-      isbn: "9780262033848",
-      genre: "Computer Science",
-      quantity: 1,
-      reserved: false,
-    },
-    {
-      id: 3,
-      name: "JavaScript: The Good Parts",
-      authors: ["Douglas Crockford"],
-      isbn: "9780596517748",
-      genre: "Programming",
-      quantity: 0,
-      reserved: false,
-    },
-    {
-      id: 4,
-      name: "Artificial Intelligence: A Modern Approach",
-      authors: ["Stuart Russell", "Peter Norvig"],
-      isbn: "9780136042594",
-      genre: "Computer Science",
-      quantity: 2,
-      reserved: true,
-    },
-    {
-      id: 5,
-      name: "You Don’t Know JS",
-      authors: ["Kyle Simpson"],
-      isbn: "9781491904244",
-      genre: "Programming",
-      quantity: 5,
-      reserved: false,
-    },
-  ];
+    // Mock book data
+    if (status === "unauthenticated") {
+      router.push("/student/login");
+    }
+    const mockBooks = [
+      {
+        id: 1,
+        name: "Clean Code",
+        authors: ["Robert C. Martin"],
+        isbn: "9780132350884",
+        genre: "Programming",
+        quantity: 3,
+        reserved: false,
+      },
+      {
+        id: 2,
+        name: "Introduction to Algorithms",
+        authors: ["Thomas H. Cormen", "Charles E. Leiserson"],
+        isbn: "9780262033848",
+        genre: "Computer Science",
+        quantity: 1,
+        reserved: false,
+      },
+      {
+        id: 3,
+        name: "JavaScript: The Good Parts",
+        authors: ["Douglas Crockford"],
+        isbn: "9780596517748",
+        genre: "Programming",
+        quantity: 0,
+        reserved: false,
+      },
+      {
+        id: 4,
+        name: "Artificial Intelligence: A Modern Approach",
+        authors: ["Stuart Russell", "Peter Norvig"],
+        isbn: "9780136042594",
+        genre: "Computer Science",
+        quantity: 2,
+        reserved: true,
+      },
+      {
+        id: 5,
+        name: "You Don’t Know JS",
+        authors: ["Kyle Simpson"],
+        isbn: "9781491904244",
+        genre: "Programming",
+        quantity: 5,
+        reserved: false,
+      },
+    ];
 
-  setBooks(mockBooks);
-}, []);
-
+    setBooks(mockBooks);
+  }, [status, router]);
 
   const filteredBooks = books.filter((book) => {
     const matchesSearch =
@@ -84,12 +89,30 @@ export default function StudentDashboard() {
     alert(`Reservation request sent for "${book.name}"`);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (confirm("Are you sure you want to logout?")) {
-      window.location.href = "/";
+      console.log(session);
+      try {
+        const signOutRes = await signOut();
+        console.log("sign out heeee ");
+        console.log(signOutRes);
+        window.location.href = "/";
+      } catch (err) {
+        console.log("error while signing out: ", err.message);
+      }
     }
   };
-
+  if (status === "loading") {
+    return <p>Loading...</p>;
+  }
+  // Don't render dashboard if session is not ready
+  if (!session) {
+    return null; // Or a loading screen/spinner
+  }
+  if (session?.user.role !== "student") {
+    router.push("/librarian/dashboard");
+    return null;
+  }
   return (
     <div className={styles.containerStyle}>
       <header className={styles.headerStyle}>
@@ -97,7 +120,7 @@ export default function StudentDashboard() {
           <div>
             <h1 style={{ margin: 0, color: "#333" }}>📚 Student Dashboard</h1>
             <p style={{ margin: "5px 0 0", color: "#666" }}>
-              Welcome back, John Doe
+              Welcome back, John Doe {session.user.role}
             </p>
           </div>
           <button

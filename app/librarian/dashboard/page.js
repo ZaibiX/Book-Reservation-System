@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import styles from "../../../styles/LibrarianDashboard.module.css";
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function LibrarianDashboard() {
   // your state and logic remains the same
@@ -10,7 +12,13 @@ export default function LibrarianDashboard() {
   const [recentReservations, setRecentReservations] = useState([]);
   const [notifications, setNotifications] = useState([]);
 
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/librarian/login");
+    }
     // Mock data
     setStats({
       totalBooks: 156,
@@ -64,11 +72,18 @@ export default function LibrarianDashboard() {
         time: "2 hours ago",
       },
     ]);
-  }, []);
+  }, [status, router]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (confirm("Are you sure you want to logout?")) {
-      window.location.href = "/";
+      try {
+        const signOutRes = await signOut();
+        // console.log("sign out heeee ");
+        console.log(signOutRes);
+        window.location.href = "/";
+      } catch (err) {
+        console.log("error while signing out: ", err.message);
+      }
     }
   };
 
@@ -93,6 +108,18 @@ export default function LibrarianDashboard() {
     );
     alert("Reservation rejected!");
   };
+
+  if (status === "loading") {
+    return <p>Loading...</p>;
+  }
+  // Don't render dashboard if session is not ready
+  if (!session) {
+    return null; // Or a loading screen/spinner
+  }
+  if (session?.user.role !== "librarian") {
+    router.push("/student/dashboard");
+    return null;
+  }
 
   return (
     <div className={styles.container}>

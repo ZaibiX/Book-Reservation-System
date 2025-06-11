@@ -1,13 +1,22 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function ReservationManagement() {
   const [reservations, setReservations] = useState([]);
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/librarian/login");
+    }
+
     // Mock data
     setReservations([
       {
@@ -63,7 +72,7 @@ export default function ReservationManagement() {
         fine: 0,
       },
     ]);
-  }, []);
+  }, [status, router]);
 
   const containerStyle = {
     minHeight: "100vh",
@@ -203,6 +212,17 @@ export default function ReservationManagement() {
         return status;
     }
   };
+
+  if (status === "loading") {
+    return <p>Loading...</p>;
+  }
+  // Don't render dashboard if session is not ready
+  if (!session) {
+    return null; // Or a loading screen/spinner
+  }
+  if (session?.user.role !== "librarian") {
+    router.push("/student/dashboard");
+  }
 
   return (
     <div style={containerStyle}>
