@@ -193,12 +193,16 @@ export async function PUT(req) {
     } else if (quantity < currentCount) {
       // Remove unreserved copies
       await db.query(
-        `DELETE FROM BookCopy 
-         WHERE book_id = $1 
-         AND is_reserved = false 
-         LIMIT $2`,
-        [id, currentCount - quantity]
-      );
+    `DELETE FROM BookCopy 
+     WHERE id IN (
+       SELECT id 
+       FROM BookCopy 
+       WHERE book_id = $1 
+       AND is_reserved = false 
+       LIMIT $2
+     )`,
+    [id, currentCount - quantity]
+  );
     }
 
     await db.query("COMMIT");

@@ -76,17 +76,7 @@ export default function StudentLogin() {
     setLoading(true);
 
     // Simulate login process
-<<<<<<< Updated upstream
     
-      console.log("Student login:", formData);
-      try {
-        // const res= await axios.post("/api/login",formData);
-        signIn("credentials", {
-          email: formData.email,
-          password: formData.password,
-          role: "student",
-=======
-    setTimeout(async() => {
       // console.log('Student login:', formData)
       try{
         // const res= await axios.post("/api/login",formData);
@@ -94,36 +84,17 @@ export default function StudentLogin() {
           email:formData.email,
           password:formData.password,
           role:"student",
->>>>>>> Stashed changes
           // redirect:false,
           callbackUrl: "/student/dashboard",
         });
-<<<<<<< Updated upstream
-        // console.log(res);
-      } catch (err) {
-=======
         console.log("Response from next- sign in: ",signInRes);
       }
       catch(err)
       {
         console.log("Response from next- sign in: ");
->>>>>>> Stashed changes
         // console.log(err)
-        if (err.response) {
-          alert(err.response.data.message);
-        } else {
-          console.error("Error: ", err.message);
         }
-<<<<<<< Updated upstream
-=======
-        else
-        {
-           console.error("Error: ", err.message);
-           alert("Error while signing in")
-        }
-        
->>>>>>> Stashed changes
-      }
+      
 
       setLoading(false);
 
