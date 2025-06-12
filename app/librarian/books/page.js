@@ -172,38 +172,38 @@ export default function BookManagement() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (editingBook) {
-      // Update existing book
-      setBooks((prev) =>
-        prev.map((book) =>
-          book.id === editingBook.id
-            ? {
-                ...book,
-                ...formData,
-                authors: formData.authors.split(",").map((a) => a.trim()),
-                quantity: parseInt(formData.quantity),
-              }
-            : book
-        )
-      );
-      alert("Book updated successfully!");
-    } else {
-      // Add new book
-      const newBook = {
-        id: Date.now(),
-        ...formData,
-        authors: formData.authors.split(",").map((a) => a.trim()),
-        quantity: parseInt(formData.quantity),
-        reserved: false,
-      };
-      setBooks((prev) => [...prev, newBook]);
-      alert("Book added successfully!");
-    }
+    try {
+      if (editingBook) {
+        // Update existing book
+        await axios.put("/api/books", {
+          id: editingBook.id,
+          ...formData,
+        });
+      } else {
+        // Add new book
+        try {
+          await axios.post("/api/books", formData);
+        } catch (err) {
+          console.log("Error while adding new book", err.message);
+          return;
+        }
+      }
 
-    resetForm();
+      // Refresh the books list
+      const response = await axios.get("/api/books");
+      setBooks(response.data);
+
+      alert(
+        editingBook ? "Book updated successfully!" : "Book added successfully!"
+      );
+      resetForm();
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to " + (editingBook ? "update" : "add") + " book");
+    }
   };
 
   const resetForm = () => {
@@ -230,13 +230,22 @@ export default function BookManagement() {
     setShowAddForm(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm("Are you sure you want to delete this book?")) {
-      setBooks((prev) => prev.filter((book) => book.id !== id));
-      alert("Book deleted successfully!");
+      try {
+        await axios.delete(`/api/books?id=${id}`);
+
+        // Refresh the books list
+        const response = await axios.get("/api/books");
+        setBooks(response.data);
+
+        alert("Book deleted successfully!");
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Failed to delete book");
+      }
     }
   };
-
   if (status === "loading") {
     return <p>Loading...</p>;
   }

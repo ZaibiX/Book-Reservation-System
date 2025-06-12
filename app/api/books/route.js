@@ -53,55 +53,73 @@ export async function POST(req) {
   try {
     const { isbn, name, authors, genre, quantity } = await req.json();
 
-    // Start a transaction
     await db.query("BEGIN");
 
-    // 1. Insert into Book table
-    const bookResult = await db.query(
-      `INSERT INTO Book (isbn, name, genre_id)
-       VALUES ($1, $2, (SELECT id FROM Genre WHERE title = $3))
-       RETURNING id`,
-      [isbn, name, genre]
-    );
+    // 1. Insert the book first
+    const bookQuery = `
+      INSERT INTO Book (isbn, name, genre_id) 
+      VALUES ($1, $2, (SELECT id FROM Genre WHERE title = $3))
+      RETURNING id;
+    `;
+    const bookResult = await db.query(bookQuery, [isbn, name, genre]);
     const bookId = bookResult.rows[0].id;
 
-    // 2. Insert authors
-    const authorsList = authors.split(",").map((author) => author.trim());
-    for (const authorName of authorsList) {
-      // Insert or get author
-      const authorResult = await db.query(
-        `INSERT INTO Author (name)
-         VALUES ($1)
-         ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
-         RETURNING id`,
+    // 2. Handle authors one by one (safer approach)
+    const authorNames = authors.split(",").map((author) => author.trim());
+    for (const authorName of authorNames) {
+      // Check if author exists
+      let authorResult = await db.query(
+        "SELECT id FROM Author WHERE name = $1",
         [authorName]
       );
-      const authorId = authorResult.rows[0].id;
+
+      let authorId;
+      if (authorResult.rows.length === 0) {
+        // Author doesn't exist, create new
+        authorResult = await db.query(
+          "INSERT INTO Author (name) VALUES ($1) RETURNING id",
+          [authorName]
+        );
+        authorId = authorResult.rows[0].id;
+      } else {
+        // Author exists
+        authorId = authorResult.rows[0].id;
+      }
 
       // Link author to book
       await db.query(
-        `INSERT INTO BookAuthor (book_id, author_id)
-         VALUES ($1, $2)`,
+        "INSERT INTO BookAuthor (book_id, author_id) VALUES ($1, $2)",
         [bookId, authorId]
       );
     }
 
     // 3. Insert book copies
-    for (let i = 0; i < quantity; i++) {
-      await db.query(
-        `INSERT INTO BookCopy (book_id, is_reserved)
-         VALUES ($1, false)`,
-        [bookId]
-      );
-    }
+    const copyValues = Array(parseInt(quantity))
+      .fill(0)
+      .map((_, index) => `($1, false)`)
+      .join(",");
+
+    await db.query(
+      `
+      INSERT INTO BookCopy (book_id, is_reserved)
+      VALUES ${copyValues}
+    `,
+      [bookId]
+    );
 
     await db.query("COMMIT");
 
-    return NextResponse.json({ message: "Book added successfully" });
+    return NextResponse.json({
+      message: "Book added successfully",
+      bookId: bookId,
+    });
   } catch (err) {
     await db.query("ROLLBACK");
     console.error(err);
-    return NextResponse.json({ error: "Failed to add book" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to add book: " + err.message },
+      { status: 500 }
+    );
   }
 }
 
@@ -117,7 +135,7 @@ export async function PUT(req) {
 
     await db.query("BEGIN");
 
-    // 1. Update Book
+    // 1. Update Book basic info
     await db.query(
       `UPDATE Book 
        SET isbn = $1, name = $2, genre_id = (SELECT id FROM Genre WHERE title = $3)
@@ -125,74 +143,75 @@ export async function PUT(req) {
       [isbn, name, genre, id]
     );
 
-    // 2. Update authors
-    // First, remove all existing author associations
-    await db.query(`DELETE FROM BookAuthor WHERE book_id = $1`, [id]);
+    // 2. Handle authors
+    // Remove old author associations
+    await db.query("DELETE FROM BookAuthor WHERE book_id = $1", [id]);
 
-    // Then add new authors
-    const authorsList = authors.split(",").map((author) => author.trim());
-    for (const authorName of authorsList) {
-      const authorResult = await db.query(
-        `INSERT INTO Author (name)
-         VALUES ($1)
-         ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
-         RETURNING id`,
+    // Add new authors
+    const authorNames = authors.split(",").map((author) => author.trim());
+    for (const authorName of authorNames) {
+      // Check if author exists
+      let authorResult = await db.query(
+        "SELECT id FROM Author WHERE name = $1",
         [authorName]
       );
-      const authorId = authorResult.rows[0].id;
 
+      let authorId;
+      if (authorResult.rows.length === 0) {
+        // Create new author
+        authorResult = await db.query(
+          "INSERT INTO Author (name) VALUES ($1) RETURNING id",
+          [authorName]
+        );
+        authorId = authorResult.rows[0].id;
+      } else {
+        authorId = authorResult.rows[0].id;
+      }
+
+      // Link author to book
       await db.query(
-        `INSERT INTO BookCopy (book_id, is_reserved)
-         VALUES ($1, $2)`,
+        "INSERT INTO BookAuthor (book_id, author_id) VALUES ($1, $2)",
         [id, authorId]
       );
     }
 
-    // 3. Update quantity
+    // 3. Handle book copies
     const currentCopies = await db.query(
-      `SELECT COUNT(*) as count FROM BookCopy WHERE book_id = $1`,
+      "SELECT COUNT(*) as count FROM BookCopy WHERE book_id = $1",
       [id]
     );
     const currentCount = parseInt(currentCopies.rows[0].count);
 
     if (quantity > currentCount) {
       // Add more copies
-      for (let i = 0; i < quantity - currentCount; i++) {
-        await db.query(
-          `INSERT INTO BookCopy (book_id, is_reserved)
-           VALUES ($1, false)`,
-          [id]
-        );
-      }
+      const newCopies = quantity - currentCount;
+      const copyValues = Array(newCopies).fill("($1, false)").join(",");
+      await db.query(
+        `INSERT INTO BookCopy (book_id, is_reserved) VALUES ${copyValues}`,
+        [id]
+      );
     } else if (quantity < currentCount) {
-      // Remove excess copies
+      // Remove unreserved copies
       await db.query(
         `DELETE FROM BookCopy 
          WHERE book_id = $1 
          AND is_reserved = false 
-         AND id IN (
-           SELECT id FROM BookCopy 
-           WHERE book_id = $1 
-           AND is_reserved = false 
-           LIMIT $2
-         )`,
+         LIMIT $2`,
         [id, currentCount - quantity]
       );
     }
 
     await db.query("COMMIT");
-
     return NextResponse.json({ message: "Book updated successfully" });
   } catch (err) {
     await db.query("ROLLBACK");
     console.error(err);
     return NextResponse.json(
-      { error: "Failed to update book" },
+      { error: "Failed to update book: " + err.message },
       { status: 500 }
     );
   }
 }
-
 // DELETE
 export async function DELETE(req) {
   const session = await getServerSession(authOptions);
