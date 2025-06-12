@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react";
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 
+//ahmad@email.com  ahmad123
 export default function StudentLogin() {
   const [formData, setFormData] = useState({
     email: "",
@@ -75,7 +76,7 @@ export default function StudentLogin() {
     setLoading(true);
 
     // Simulate login process
-    setTimeout(async () => {
+    
       console.log("Student login:", formData);
       try {
         // const res= await axios.post("/api/login",formData);
@@ -99,7 +100,7 @@ export default function StudentLogin() {
       setLoading(false);
 
       // router.push('/student/dashboard')
-    }, 1000);
+    
   };
 
   if (status === "loading") {

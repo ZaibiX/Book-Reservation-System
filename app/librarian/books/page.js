@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 export default function BookManagement() {
   const [books, setBooks] = useState([]);
@@ -25,44 +26,59 @@ export default function BookManagement() {
       router.push("/librarian/login");
     }
     // Mock data
-    setBooks([
-      {
-        id: 1,
-        isbn: "978-0134685991",
-        name: "Effective Java",
-        authors: ["Joshua Bloch"],
-        genre: "Programming",
-        quantity: 3,
-        reserved: false,
-      },
-      {
-        id: 2,
-        isbn: "978-0596009205",
-        name: "Head First Design Patterns",
-        authors: ["Eric Freeman"],
-        genre: "Programming",
-        quantity: 2,
-        reserved: false,
-      },
-      {
-        id: 3,
-        isbn: "978-0321573513",
-        name: "Algorithms",
-        authors: ["Robert Sedgewick"],
-        genre: "Computer Science",
-        quantity: 1,
-        reserved: true,
-      },
-      {
-        id: 4,
-        isbn: "978-0262033848",
-        name: "Introduction to Algorithms",
-        authors: ["Thomas H. Cormen"],
-        genre: "Computer Science",
-        quantity: 4,
-        reserved: false,
-      },
-    ]);
+    // setBooks([
+    //   {
+    //     id: 1,
+    //     isbn: "978-0134685991",
+    //     name: "Effective Java",
+    //     authors: ["Joshua Bloch"],
+    //     genre: "Programming",
+    //     quantity: 3,
+    //     reserved: false,
+    //   },
+    //   {
+    //     id: 2,
+    //     isbn: "978-0596009205",
+    //     name: "Head First Design Patterns",
+    //     authors: ["Eric Freeman"],
+    //     genre: "Programming",
+    //     quantity: 2,
+    //     reserved: false,
+    //   },
+    //   {
+    //     id: 3,
+    //     isbn: "978-0321573513",
+    //     name: "Algorithms",
+    //     authors: ["Robert Sedgewick"],
+    //     genre: "Computer Science",
+    //     quantity: 1,
+    //     reserved: true,
+    //   },
+    //   {
+    //     id: 4,
+    //     isbn: "978-0262033848",
+    //     name: "Introduction to Algorithms",
+    //     authors: ["Thomas H. Cormen"],
+    //     genre: "Computer Science",
+    //     quantity: 4,
+    //     reserved: false,
+    //   },
+    // ]);
+    // Define the async function inside useEffect
+    const fetchBooks = async () => {
+      try {
+        const resBooks = await axios.get("/api/books");
+        console.log(resBooks);
+        setBooks(resBooks.data);
+        // return resBooks.data;
+      } catch (err) {
+        console.log("Error while fetching books: ", err.message);
+      }
+    };
+
+    // Call the async function
+    fetchBooks();
+    // console.log("daataa is : ", data);
   }, [status, router]);
 
   const containerStyle = {
@@ -207,7 +223,7 @@ export default function BookManagement() {
     setFormData({
       isbn: book.isbn,
       name: book.name,
-      authors: book.authors.join(", "),
+      authors: book.authors, //book.authors.join(", ") if authors is an array
       genre: book.genre,
       quantity: book.quantity,
     });
@@ -345,8 +361,8 @@ export default function BookManagement() {
                 </tr>
               </thead>
               <tbody>
-                {filteredBooks.map((book) => (
-                  <tr key={book.id}>
+                {filteredBooks.map((book, ind) => (
+                  <tr key={ind}>
                     <td
                       style={{ padding: "12px", border: "1px solid #dee2e6" }}
                     >
@@ -360,7 +376,7 @@ export default function BookManagement() {
                     <td
                       style={{ padding: "12px", border: "1px solid #dee2e6" }}
                     >
-                      {book.authors.join(", ")}
+                      {book.authors /*book.authors.join(", ") if an array*/}
                     </td>
                     <td
                       style={{ padding: "12px", border: "1px solid #dee2e6" }}
@@ -386,7 +402,7 @@ export default function BookManagement() {
                           fontSize: "12px",
                         }}
                       >
-                        {book.reserved ? "Reserved" : "Available"}
+                        {book.is_reserved ? "Reserved" : "Available"}
                       </span>
                     </td>
                     <td

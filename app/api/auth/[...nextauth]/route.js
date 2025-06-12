@@ -1,18 +1,17 @@
 import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcrypt";
-import db from "../../../../utils/db.js"; // use your DB util function
-import { v4 as uuidv4 } from "uuid";
+import db from "../../../../utils/db.js";
 
-const handler = NextAuth({
+// Separate the configuration object
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        role: { label: "Role", type: "text" }, // Add role field (or dropdown in UI)
+        role: { label: "Role", type: "text" },
       },
 
       async authorize(credentials, req) {
@@ -22,14 +21,12 @@ const handler = NextAuth({
           let user;
           let name;
 
-          // Validate role
           if (!role || !["student", "librarian"].includes(role)) {
             throw new Error("Invalid role specified");
           }
 
           const table = role === "student" ? "Student" : "Librarian";
 
-          // Query respective user
           const result = await db.query(
             `SELECT id, name_id, email, password FROM ${table} WHERE email = $1`,
             [email]
@@ -45,7 +42,6 @@ const handler = NextAuth({
             throw new Error("Incorrect password");
           }
 
-          // Get name
           const result2 = await db.query(
             "SELECT fname, lname FROM Name WHERE id = $1",
             [user.name_id]
@@ -74,12 +70,11 @@ const handler = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = user.role; // Pass role into JWT
+        token.role = user.role;
       }
       return token;
     },
   },
-
   pages: {
     signIn: "/student/login",
   },
@@ -87,6 +82,9 @@ const handler = NextAuth({
   session: {
     strategy: "jwt",
   },
-});
+};
+
+// Create the handler using the authOptions
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

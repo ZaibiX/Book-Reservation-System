@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 
+//john@email.com  admin123
 export default function LibrarianLogin() {
   const [formData, setFormData] = useState({
     email: "",
@@ -76,10 +77,29 @@ export default function LibrarianLogin() {
     setLoading(true);
 
     // Simulate login process
-    setTimeout(() => {
+    
       console.log("Librarian login:", formData);
-      router.push("/librarian/dashboard");
-    }, 1000);
+      try {
+        // const res= await axios.post("/api/login",formData);
+        signIn("credentials", {
+          email: formData.email,
+          password: formData.password,
+          role: "librarian",
+          // redirect:false,
+          callbackUrl: "/librarian/dashboard",
+        });
+        // console.log(res);
+      } catch (err) {
+        // console.log(err)
+        if (err.response) {
+          alert(err.response.data.message);
+        } else {
+          console.error("Error: ", err.message);
+        }
+      }
+
+      setLoading(false);
+     
   };
 
   if (status === "loading") {
