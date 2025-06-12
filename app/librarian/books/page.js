@@ -178,10 +178,12 @@ export default function BookManagement() {
     try {
       if (editingBook) {
         // Update existing book
-        await axios.put("/api/books", {
+        const resPut = await axios.put("/api/books", {
           id: editingBook.id,
           ...formData,
         });
+        // catch(err){console.log(err.message)}
+        console.log(resPut);
       } else {
         // Add new book
         try {
