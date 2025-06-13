@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import styles from "../../../styles/stDashboard.module.css";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 export default function StudentDashboard() {
   const [books, setBooks] = useState([]);
@@ -15,60 +16,25 @@ export default function StudentDashboard() {
   // Mock data setup omitted for brevity...
 
   useEffect(() => {
-    // Mock book data
-    if (status === "unauthenticated") {
-      router.push("/student/login");
-    }
-    const mockBooks = [
-      {
-        id: 1,
-        name: "Clean Code",
-        authors: ["Robert C. Martin"],
-        isbn: "9780132350884",
-        genre: "Programming",
-        quantity: 3,
-        reserved: false,
-      },
-      {
-        id: 2,
-        name: "Introduction to Algorithms",
-        authors: ["Thomas H. Cormen", "Charles E. Leiserson"],
-        isbn: "9780262033848",
-        genre: "Computer Science",
-        quantity: 1,
-        reserved: false,
-      },
-      {
-        id: 3,
-        name: "JavaScript: The Good Parts",
-        authors: ["Douglas Crockford"],
-        isbn: "9780596517748",
-        genre: "Programming",
-        quantity: 0,
-        reserved: false,
-      },
-      {
-        id: 4,
-        name: "Artificial Intelligence: A Modern Approach",
-        authors: ["Stuart Russell", "Peter Norvig"],
-        isbn: "9780136042594",
-        genre: "Computer Science",
-        quantity: 2,
-        reserved: true,
-      },
-      {
-        id: 5,
-        name: "You Don’t Know JS",
-        authors: ["Kyle Simpson"],
-        isbn: "9781491904244",
-        genre: "Programming",
-        quantity: 5,
-        reserved: false,
-      },
-    ];
-
-    setBooks(mockBooks);
-  }, [status, router]);
+  if (status === "unauthenticated") {
+    router.push("/student/login");
+    return;
+  }
+  if (status === "authenticated") {
+    axios.get("/api/get-books")
+      .then(res => setBooks(res.data.books))
+      .catch(err => {
+        console.error("Failed to fetch books:", err);
+        setBooks([]);
+      });
+    axios.get("/api/get-reservations")
+      .then(res => setReservations(res.data.reservations))
+      .catch(err => {
+        console.error("Failed to fetch reservations:", err);
+        setReservations([]);
+      });
+  }
+}, [status, router]);
 
   const filteredBooks = books.filter((book) => {
     const matchesSearch =
@@ -81,13 +47,22 @@ export default function StudentDashboard() {
     return matchesSearch && matchesGenre;
   });
 
-  const handleReserveBook = (book) => {
-    if (book.reserved || book.quantity === 0) {
-      alert("This book is currently unavailable.");
-      return;
-    }
-    alert(`Reservation request sent for "${book.name}"`);
-  };
+  const handleReserveBook = async (book) => {
+  if (book.reserved || book.quantity === 0) {
+    alert("This book is currently unavailable.");
+    return;
+  }
+  try {
+    const res = await axios.post("/api/set-reservations", { bookId: book.id });
+    alert(res.data.message || `Reservation request sent for "${book.name}"`);
+    // Re-fetch books and reservations to update UI
+    axios.get("/api/get-books").then(res => setBooks(res.data.books));
+    axios.get("/api/get-reservations").then(res => setReservations(res.data.reservations));
+  } catch (err) {
+    alert(err.response?.data?.error || "Failed to reserve book.");
+    console.log(err.message);
+  }
+};
 
   const handleLogout = async () => {
     if (confirm("Are you sure you want to logout?")) {
