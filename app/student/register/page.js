@@ -127,6 +127,7 @@ export default function StudentRegister() {
         email: formData.email,
         password: formData.password,
         callbackUrl: "/student/dashboard", // redirect after login
+        role:"student",
       });
     }
     else{

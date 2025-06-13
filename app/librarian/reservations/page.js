@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 export default function ReservationManagement() {
   const [reservations, setReservations] = useState([]);
@@ -12,165 +13,59 @@ export default function ReservationManagement() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  // Async function to fetch reservations
+  const fetchReservations = async () => {
+    try {
+      const res = await axios.get("/api/reservations");
+      setReservations(res.data.reservations);
+    } catch (err) {
+      setReservations([]);
+      alert("Failed to fetch reservations.");
+      console.log(err)
+    }
+  };
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/librarian/login");
+      return;
     }
-
-    // Mock data
-    setReservations([
-      {
-        id: 1,
-        studentId: 1,
-        studentName: "John Doe",
-        studentEmail: "john@university.edu",
-        bookId: 1,
-        bookName: "Clean Code",
-        isbn: "978-0132350884",
-        createdAt: "2024-05-15",
-        dueDate: "2024-05-29",
-        status: "active",
-        fine: 0,
-      },
-      {
-        id: 2,
-        studentId: 2,
-        studentName: "Jane Smith",
-        studentEmail: "jane@university.edu",
-        bookId: 2,
-        bookName: "Effective Java",
-        isbn: "978-0134685991",
-        createdAt: "2024-05-10",
-        dueDate: "2024-05-24",
-        status: "overdue",
-        fine: 10,
-      },
-      {
-        id: 3,
-        studentId: 3,
-        studentName: "Mike Johnson",
-        studentEmail: "mike@university.edu",
-        bookId: 3,
-        bookName: "Design Patterns",
-        isbn: "978-0201633610",
-        createdAt: "2024-05-12",
-        dueDate: "2024-05-26",
-        status: "returned",
-        fine: 0,
-      },
-      {
-        id: 4,
-        studentId: 4,
-        studentName: "Sarah Wilson",
-        studentEmail: "sarah@university.edu",
-        bookId: 4,
-        bookName: "Algorithms",
-        isbn: "978-0321573513",
-        createdAt: "2024-05-20",
-        dueDate: null,
-        status: "pending",
-        fine: 0,
-      },
-    ]);
+    if (status === "authenticated") {
+      fetchReservations();
+    }
   }, [status, router]);
 
-  const containerStyle = {
-    minHeight: "100vh",
-    backgroundColor: "#f8f9fa",
+  const handleApprove = async (id) => {
+    try {
+      await axios.post("/api/reservations", { reservationId: id, action: "approve" });
+      await fetchReservations();
+      alert("Reservation approved!");
+    } catch (err) {
+      alert("Failed to approve reservation.");
+      console.log(err)
+    }
   };
 
-  const headerStyle = {
-    backgroundColor: "white",
-    borderBottom: "1px solid #e0e0e0",
-    padding: "20px 0",
+  const handleReject = async (id) => {
+    try {
+      await axios.post("/api/reservations", { reservationId: id, action: "reject" });
+      await fetchReservations();
+      alert("Reservation rejected and removed!");
+    } catch (err) {
+      alert("Failed to reject reservation.");
+      console.log(err)
+    }
   };
 
-  const headerContentStyle = {
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "0 20px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  };
-
-  const mainContentStyle = {
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "20px",
-  };
-
-  const cardStyle = {
-    backgroundColor: "white",
-    borderRadius: "8px",
-    padding: "20px",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-    marginBottom: "20px",
-  };
-
-  const inputStyle = {
-    padding: "10px",
-    border: "1px solid #ddd",
-    borderRadius: "4px",
-    margin: "5px",
-    width: "200px",
-  };
-
-  const buttonStyle = {
-    backgroundColor: "#dc3545",
-    color: "white",
-    border: "none",
-    padding: "8px 16px",
-    borderRadius: "4px",
-    cursor: "pointer",
-    margin: "2px",
-    fontSize: "14px",
-  };
-
-  const filteredReservations = reservations.filter((reservation) => {
-    const matchesFilter = filter === "all" || reservation.status === filter;
-    const matchesSearch =
-      reservation.studentName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      reservation.bookName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reservation.isbn.includes(searchTerm);
-    return matchesFilter && matchesSearch;
-  });
-
-  const handleApprove = (id) => {
-    setReservations((prev) =>
-      prev.map((reservation) =>
-        reservation.id === id
-          ? {
-              ...reservation,
-              status: "active",
-              dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0],
-            }
-          : reservation
-      )
-    );
-    alert("Reservation approved!");
-  };
-
-  const handleReject = (id) => {
-    setReservations((prev) =>
-      prev.filter((reservation) => reservation.id !== id)
-    );
-    alert("Reservation rejected and removed!");
-  };
-
-  const handleReturn = (id) => {
-    setReservations((prev) =>
-      prev.map((reservation) =>
-        reservation.id === id
-          ? { ...reservation, status: "returned" }
-          : reservation
-      )
-    );
-    alert("Book returned successfully!");
+  const handleReturn = async (id) => {
+    try {
+      await axios.post("/api/reservations", { reservationId: id, action: "return" });
+      await fetchReservations();
+      alert("Book returned successfully!");
+    } catch (err) {
+      alert("Failed to mark as returned.");
+      console.log(err)
+    }
   };
 
   const calculateFine = (dueDate, status) => {
@@ -222,12 +117,40 @@ export default function ReservationManagement() {
   }
   if (session?.user.role !== "librarian") {
     router.push("/student/dashboard");
+    return null;
   }
 
+  const filteredReservations = reservations.filter((reservation) => {
+    const matchesFilter = filter === "all" || reservation.status === filter;
+    const matchesSearch =
+      reservation.studentName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      reservation.bookName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reservation.isbn.includes(searchTerm);
+    return matchesFilter && matchesSearch;
+  });
+
+  // ... UI code remains the same as before
+
   return (
-    <div style={containerStyle}>
-      <header style={headerStyle}>
-        <div style={headerContentStyle}>
+    <div style={{
+      minHeight: "100vh",
+      backgroundColor: "#f8f9fa",
+    }}>
+      <header style={{
+        backgroundColor: "white",
+        borderBottom: "1px solid #e0e0e0",
+        padding: "20px 0",
+      }}>
+        <div style={{
+          maxWidth: "1200px",
+          margin: "0 auto",
+          padding: "0 20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}>
           <div>
             <h1 style={{ margin: 0, color: "#333" }}>
               📋 Reservation Management
@@ -239,8 +162,14 @@ export default function ReservationManagement() {
           <Link
             href="/librarian/dashboard"
             style={{
-              ...buttonStyle,
               backgroundColor: "#6c757d",
+              color: "white",
+              border: "none",
+              padding: "8px 16px",
+              borderRadius: "4px",
+              cursor: "pointer",
+              margin: "2px",
+              fontSize: "14px",
               textDecoration: "none",
             }}
           >
@@ -249,8 +178,18 @@ export default function ReservationManagement() {
         </div>
       </header>
 
-      <div style={mainContentStyle}>
-        <div style={cardStyle}>
+      <div style={{
+        maxWidth: "1200px",
+        margin: "0 auto",
+        padding: "20px",
+      }}>
+        <div style={{
+          backgroundColor: "white",
+          borderRadius: "8px",
+          padding: "20px",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          marginBottom: "20px",
+        }}>
           {/* Filters and Search */}
           <div
             style={{
@@ -265,12 +204,24 @@ export default function ReservationManagement() {
               placeholder="Search by student, book, or ISBN..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ ...inputStyle, width: "300px" }}
+              style={{
+                padding: "10px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                margin: "5px",
+                width: "300px",
+              }}
             />
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              style={inputStyle}
+              style={{
+                padding: "10px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                margin: "5px",
+                width: "200px",
+              }}
             >
               <option value="all">All Reservations</option>
               <option value="pending">Pending</option>
@@ -292,38 +243,19 @@ export default function ReservationManagement() {
               borderRadius: "6px",
             }}
           >
-            <div style={{ textAlign: "center" }}>
-              <h3 style={{ margin: "0 0 5px", color: "#ffc107" }}>
-                {reservations.filter((r) => r.status === "pending").length}
-              </h3>
-              <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
-                Pending
-              </p>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <h3 style={{ margin: "0 0 5px", color: "#28a745" }}>
-                {reservations.filter((r) => r.status === "active").length}
-              </h3>
-              <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
-                Active
-              </p>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <h3 style={{ margin: "0 0 5px", color: "#dc3545" }}>
-                {reservations.filter((r) => r.status === "overdue").length}
-              </h3>
-              <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
-                Overdue
-              </p>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <h3 style={{ margin: "0 0 5px", color: "#6c757d" }}>
-                {reservations.filter((r) => r.status === "returned").length}
-              </h3>
-              <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
-                Returned
-              </p>
-            </div>
+            {["pending", "active", "overdue", "returned"].map((statusKey) => (
+              <div style={{ textAlign: "center" }} key={statusKey}>
+                <h3 style={{
+                  margin: "0 0 5px",
+                  color: getStatusColor(statusKey),
+                }}>
+                  {reservations.filter((r) => r.status === statusKey).length}
+                </h3>
+                <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
+                  {getStatusText(statusKey)}
+                </p>
+              </div>
+            ))}
           </div>
 
           {/* Reservations Table */}
@@ -331,86 +263,20 @@ export default function ReservationManagement() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ backgroundColor: "#f8f9fa" }}>
-                  <th
-                    style={{
-                      padding: "12px",
-                      textAlign: "left",
-                      border: "1px solid #dee2e6",
-                    }}
-                  >
-                    Student
-                  </th>
-                  <th
-                    style={{
-                      padding: "12px",
-                      textAlign: "left",
-                      border: "1px solid #dee2e6",
-                    }}
-                  >
-                    Book
-                  </th>
-                  <th
-                    style={{
-                      padding: "12px",
-                      textAlign: "left",
-                      border: "1px solid #dee2e6",
-                    }}
-                  >
-                    ISBN
-                  </th>
-                  <th
-                    style={{
-                      padding: "12px",
-                      textAlign: "left",
-                      border: "1px solid #dee2e6",
-                    }}
-                  >
-                    Reserved At
-                  </th>
-                  <th
-                    style={{
-                      padding: "12px",
-                      textAlign: "left",
-                      border: "1px solid #dee2e6",
-                    }}
-                  >
-                    Due Date
-                  </th>
-                  <th
-                    style={{
-                      padding: "12px",
-                      textAlign: "left",
-                      border: "1px solid #dee2e6",
-                    }}
-                  >
-                    Status
-                  </th>
-                  <th
-                    style={{
-                      padding: "12px",
-                      textAlign: "left",
-                      border: "1px solid #dee2e6",
-                    }}
-                  >
-                    Fine
-                  </th>
-                  <th
-                    style={{
-                      padding: "12px",
-                      textAlign: "left",
-                      border: "1px solid #dee2e6",
-                    }}
-                  >
-                    Actions
-                  </th>
+                  <th style={thStyle}>Student</th>
+                  <th style={thStyle}>Book</th>
+                  <th style={thStyle}>ISBN</th>
+                  <th style={thStyle}>Reserved At</th>
+                  <th style={thStyle}>Due Date</th>
+                  <th style={thStyle}>Status</th>
+                  <th style={thStyle}>Fine</th>
+                  <th style={thStyle}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredReservations.map((reservation) => (
                   <tr key={reservation.id}>
-                    <td
-                      style={{ padding: "12px", border: "1px solid #dee2e6" }}
-                    >
+                    <td style={tdStyle}>
                       <div>
                         <div style={{ fontWeight: "bold" }}>
                           {reservation.studentName}
@@ -420,29 +286,19 @@ export default function ReservationManagement() {
                         </div>
                       </div>
                     </td>
-                    <td
-                      style={{ padding: "12px", border: "1px solid #dee2e6" }}
-                    >
+                    <td style={tdStyle}>
                       {reservation.bookName}
                     </td>
-                    <td
-                      style={{ padding: "12px", border: "1px solid #dee2e6" }}
-                    >
+                    <td style={tdStyle}>
                       {reservation.isbn}
                     </td>
-                    <td
-                      style={{ padding: "12px", border: "1px solid #dee2e6" }}
-                    >
+                    <td style={tdStyle}>
                       {reservation.createdAt}
                     </td>
-                    <td
-                      style={{ padding: "12px", border: "1px solid #dee2e6" }}
-                    >
+                    <td style={tdStyle}>
                       {reservation.dueDate || "N/A"}
                     </td>
-                    <td
-                      style={{ padding: "12px", border: "1px solid #dee2e6" }}
-                    >
+                    <td style={tdStyle}>
                       <span
                         style={{
                           backgroundColor: getStatusColor(reservation.status),
@@ -455,28 +311,44 @@ export default function ReservationManagement() {
                         {getStatusText(reservation.status)}
                       </span>
                     </td>
-                    <td
-                      style={{ padding: "12px", border: "1px solid #dee2e6" }}
-                    >
-                      {reservation.fine > 0 ? `$${reservation.fine}` : "$0"}
+                    <td style={tdStyle}>
+                      {/* If your API provides a fine field, use it.
+                          Otherwise, you can uncomment the next line to calculate it on the fly:
+                          {calculateFine(reservation.dueDate, reservation.status) > 0 ? `$${calculateFine(reservation.dueDate, reservation.status)}` : "$0"} */}
+                      {reservation.fine !== undefined
+                        ? (reservation.fine > 0 ? `$${reservation.fine}` : "$0")
+                        : "$0"}
                     </td>
-                    <td
-                      style={{ padding: "12px", border: "1px solid #dee2e6" }}
-                    >
+                    <td style={tdStyle}>
                       {reservation.status === "pending" && (
                         <div>
                           <button
                             onClick={() => handleApprove(reservation.id)}
                             style={{
-                              ...buttonStyle,
                               backgroundColor: "#28a745",
+                              color: "white",
+                              border: "none",
+                              padding: "8px 16px",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              margin: "2px",
+                              fontSize: "14px",
                             }}
                           >
                             Approve
                           </button>
                           <button
                             onClick={() => handleReject(reservation.id)}
-                            style={buttonStyle}
+                            style={{
+                              backgroundColor: "#dc3545",
+                              color: "white",
+                              border: "none",
+                              padding: "8px 16px",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              margin: "2px",
+                              fontSize: "14px",
+                            }}
                           >
                             Reject
                           </button>
@@ -486,7 +358,16 @@ export default function ReservationManagement() {
                         reservation.status === "overdue") && (
                         <button
                           onClick={() => handleReturn(reservation.id)}
-                          style={{ ...buttonStyle, backgroundColor: "#17a2b8" }}
+                          style={{
+                            backgroundColor: "#17a2b8",
+                            color: "white",
+                            border: "none",
+                            padding: "8px 16px",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            margin: "2px",
+                            fontSize: "14px",
+                          }}
                         >
                           Mark Returned
                         </button>
@@ -515,3 +396,14 @@ export default function ReservationManagement() {
     </div>
   );
 }
+
+// Table cell and header styles
+const thStyle = {
+  padding: "12px",
+  textAlign: "left",
+  border: "1px solid #dee2e6",
+};
+const tdStyle = {
+  padding: "12px",
+  border: "1px solid #dee2e6",
+};
