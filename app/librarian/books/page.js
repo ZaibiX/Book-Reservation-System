@@ -159,7 +159,7 @@ export default function BookManagement() {
   const filteredBooks = books.filter(
     (book) =>
       book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.authors.some((author) =>
+      book.authors.split(",").some((author) =>
         author.toLowerCase().includes(searchTerm.toLowerCase())
       ) ||
       book.isbn.includes(searchTerm)
