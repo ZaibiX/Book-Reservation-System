@@ -82,7 +82,7 @@ export default function LibrarianDashboard() {
     return;
   }
   if (status === "authenticated") {
-    axios.get("/api/reservations") // or "/api/reservations"
+    axios.get("/api/reservations") 
       .then(res => {
         // Transform and set stats/recentReservations from res.data.reservations here
         setRecentReservations(res.data.reservations);
