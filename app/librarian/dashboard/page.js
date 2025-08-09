@@ -4,6 +4,7 @@ import Link from "next/link";
 import styles from "../../../styles/LibrarianDashboard.module.css";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 export default function LibrarianDashboard() {
   // your state and logic remains the same
@@ -15,64 +16,86 @@ export default function LibrarianDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  // useEffect(() => {
+  //   if (status === "unauthenticated") {
+  //     router.push("/librarian/login");
+  //   }
+  //   // Mock data
+  //   setStats({
+  //     totalBooks: 156,
+  //     totalStudents: 89,
+  //     activeReservations: 23,
+  //     overdue: 5,
+  //     pendingRequests: 8,
+  //   });
+
+  //   setRecentReservations([
+  //     {
+  //       id: 1,
+  //       studentName: "John Doe",
+  //       bookName: "Clean Code",
+  //       requestDate: "2024-05-20",
+  //       status: "pending",
+  //     },
+  //     {
+  //       id: 2,
+  //       studentName: "Jane Smith",
+  //       bookName: "Effective Java",
+  //       requestDate: "2024-05-19",
+  //       status: "approved",
+  //     },
+  //     {
+  //       id: 3,
+  //       studentName: "Mike Johnson",
+  //       bookName: "Algorithms",
+  //       requestDate: "2024-05-18",
+  //       status: "pending",
+  //     },
+  //   ]);
+
+  //   setNotifications([
+  //     {
+  //       id: 1,
+  //       message: "New reservation request from John Doe",
+  //       type: "request",
+  //       time: "10 minutes ago",
+  //     },
+  //     {
+  //       id: 2,
+  //       message: "5 books are overdue",
+  //       type: "warning",
+  //       time: "1 hour ago",
+  //     },
+  //     {
+  //       id: 3,
+  //       message: "System backup completed",
+  //       type: "info",
+  //       time: "2 hours ago",
+  //     },
+  //   ]);
+  // }, [status, router]);
+
+
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/librarian/login");
-    }
-    // Mock data
-    setStats({
-      totalBooks: 156,
-      totalStudents: 89,
-      activeReservations: 23,
-      overdue: 5,
-      pendingRequests: 8,
-    });
+  if (status === "unauthenticated") {
+    router.push("/librarian/login");
+    return;
+  }
+  if (status === "authenticated") {
+    axios.get("/api/reservations") // or "/api/reservations"
+      .then(res => {
+        // Transform and set stats/recentReservations from res.data.reservations here
+        setRecentReservations(res.data.reservations);
+        // You may need to compute stats here from the reservations array
+      })
+      .catch(err => {
+        setRecentReservations([]);
+        // handle error as needed
+      });
+    // Fetch stats separately if you have a dedicated endpoint, or compute from reservations
+  }
+}, [status, router]);
 
-    setRecentReservations([
-      {
-        id: 1,
-        studentName: "John Doe",
-        bookName: "Clean Code",
-        requestDate: "2024-05-20",
-        status: "pending",
-      },
-      {
-        id: 2,
-        studentName: "Jane Smith",
-        bookName: "Effective Java",
-        requestDate: "2024-05-19",
-        status: "approved",
-      },
-      {
-        id: 3,
-        studentName: "Mike Johnson",
-        bookName: "Algorithms",
-        requestDate: "2024-05-18",
-        status: "pending",
-      },
-    ]);
-
-    setNotifications([
-      {
-        id: 1,
-        message: "New reservation request from John Doe",
-        type: "request",
-        time: "10 minutes ago",
-      },
-      {
-        id: 2,
-        message: "5 books are overdue",
-        type: "warning",
-        time: "1 hour ago",
-      },
-      {
-        id: 3,
-        message: "System backup completed",
-        type: "info",
-        time: "2 hours ago",
-      },
-    ]);
-  }, [status, router]);
 
   const handleLogout = async () => {
     if (confirm("Are you sure you want to logout?")) {
