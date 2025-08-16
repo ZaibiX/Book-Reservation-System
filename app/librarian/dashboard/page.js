@@ -76,25 +76,60 @@ export default function LibrarianDashboard() {
   // }, [status, router]);
 
 
-  useEffect(() => {
+ useEffect(() => {
   if (status === "unauthenticated") {
     router.push("/librarian/login");
     return;
   }
+
   if (status === "authenticated") {
-    axios.get("/api/reservations") 
-      .then(res => {
-        // Transform and set stats/recentReservations from res.data.reservations here
-        setRecentReservations(res.data.reservations);
-        // You may need to compute stats here from the reservations array
-      })
-      .catch(err => {
+    const fetchDashboardData = async () => {
+      try {
+        const res = await axios.get("/api/get-library-stats"); // adjust endpoint name if different
+        const data = res.data;
+
+        setStats({
+          totalBooks: data.totalBooks,
+          totalStudents: data.totalStudents,
+          activeReservations: data.activeReservations,
+          overdue: data.overdueBooks,
+          pendingRequests: data.pendingRequests,
+        });
+
+        setRecentReservations(data.recentReservations || []);
+
+        // optional notifications
+        const newNotifications = [];
+        if (parseInt(data.pendingRequests) > 0) {
+          newNotifications.push({
+            id: 1,
+            message: `${data.pendingRequests} new reservation requests`,
+            type: "request",
+            time: "just now",
+          });
+        }
+        if (parseInt(data.overdueBooks) > 0) {
+          newNotifications.push({
+            id: 2,
+            message: `${data.overdueBooks} books are overdue`,
+            type: "warning",
+            time: "just now",
+          });
+        }
+
+        setNotifications(newNotifications);
+      } catch (err) {
+        console.error("Error fetching dashboard stats:", err);
+        setStats({});
         setRecentReservations([]);
-        // handle error as needed
-      });
-    // Fetch stats separately if you have a dedicated endpoint, or compute from reservations
+        setNotifications([]);
+      }
+    };
+
+    fetchDashboardData();
   }
 }, [status, router]);
+
 
 
   const handleLogout = async () => {
