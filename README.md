@@ -13,7 +13,7 @@ This project was developed as a Course Project and supports:
 
 1️⃣ Clone the repository
 git clone https://github.com/zaibix/book-reservation-system.git
-cd library-management-system
+cd book-reservation-system
 
 2️⃣ Install dependencies
 npm install
