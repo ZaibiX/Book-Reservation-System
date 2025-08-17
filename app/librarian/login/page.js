@@ -17,12 +17,14 @@ export default function LibrarianLogin() {
 
   const { data: session, status } = useSession();
   useEffect(() => {
-    if (status === "authenticated") {
-      if (session?.user.role === "librarian") {
-        router.push("/librarian/dashboard");
-      }
+  if (status === "authenticated") {
+    if (session?.user.role === "librarian") {
+      router.push("/librarian/dashboard");
+    } else if (session?.user.role === "student") {
+      router.push("/student/dashboard");
     }
-  }, [status, router]);
+  }
+}, [status, session, router]);
 
   const containerStyle = {
     minHeight: "100vh",
@@ -81,7 +83,7 @@ export default function LibrarianLogin() {
       console.log("Librarian login:", formData);
       try {
         // const res= await axios.post("/api/login",formData);
-        signIn("credentials", {
+        const signInRes = await signIn("credentials", {
           email: formData.email,
           password: formData.password,
           role: "librarian",
@@ -107,15 +109,15 @@ export default function LibrarianLogin() {
     // return null;
   }
 
-  if (session?.user.role === "librarian") {
-    router.push("/librarian/dashboard");
-    return null;
-  }
+  // if (session?.user.role === "librarian") {
+  //   router.push("/librarian/dashboard");
+  //   return null;
+  // }
 
-  if (session?.user.role === "student") {
-    router.push("/student/dashboard");
-    return null;
-  }
+  // if (session?.user.role === "student") {
+  //   router.push("/student/dashboard");
+  //   return null;
+  // }
 
   return (
     <div style={containerStyle}>

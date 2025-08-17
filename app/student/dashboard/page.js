@@ -20,6 +20,10 @@ export default function StudentDashboard() {
     router.push("/student/login");
     return;
   }
+  if (session?.user.role === "librarian") {
+    router.push("/librarian/dashboard");
+    return null;
+  }
   if (status === "authenticated") {
     axios.get("/api/get-books")
       .then(res => setBooks(res.data.books))
@@ -81,13 +85,10 @@ export default function StudentDashboard() {
     return <p>Loading...</p>;
   }
   // Don't render dashboard if session is not ready
-  if (!session) {
-    return null; // Or a loading screen/spinner
-  }
-  if (session?.user.role !== "student") {
-    router.push("/librarian/dashboard");
-    return null;
-  }
+  // if (!session) {
+  //   return null; // Or a loading screen/spinner
+  // }
+  
   return (
     <div className={styles.containerStyle}>
       <header className={styles.headerStyle}>

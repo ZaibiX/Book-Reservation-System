@@ -75,9 +75,9 @@ export const authOptions = {
       return token;
     },
   },
-  pages: {
-    signIn: "/student/login",
-  },
+  // pages: {
+  //   signIn: "/student/login",
+  // },
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",

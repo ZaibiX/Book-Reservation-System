@@ -18,10 +18,14 @@ export default function StudentLogin() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    if (status === "authenticated") {
+  if (status === "authenticated") {
+    if (session?.user.role === "student") {
       router.push("/student/dashboard");
+    } else if (session?.user.role === "librarian") {
+      router.push("/librarian/dashboard");
     }
-  }, [status, router]);
+  }
+}, [status, session, router]);
 
   const containerStyle = {
     minHeight: "100vh",
@@ -107,15 +111,7 @@ export default function StudentLogin() {
     // return null;
   }
 
-  if (session?.user.role === "librarian") {
-    router.push("/librarian/dashboard");
-    return null;
-  }
 
-  if (session?.user.role === "student") {
-    router.push("/student/dashboard");
-    return null;
-  }
 
   return (
     <div style={containerStyle}>

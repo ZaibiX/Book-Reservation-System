@@ -75,7 +75,7 @@ export async function POST(req) {
     );
 
     // If marking as completed (returned), free the book copy AND calculate fine
-    if (action === "return") {
+    if (action === "return"|| action === "reject") {
       // Get book_copy_id and due_date
       const copyRes = await db.query(
         `SELECT book_copy_id, due_date FROM Reservation WHERE id = $1`,
