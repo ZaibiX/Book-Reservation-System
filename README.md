@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+📚 Library Management System
 
-## Getting Started
+A full-stack Database Management System (DBMS) built with Next.js, Supabase (PostgreSQL), and NextAuth.js for authentication.
 
-First, run the development server:
+This project was developed as a Course Project and supports:
 
-```bash
+👩‍🎓 Student login
+📚 Librarian login
+🔐 Authentication & session management with NextAuth
+📖 Book, Authors, Genres, Reservations & Copies management
+
+🚀 Getting Started
+
+1️⃣ Clone the repository
+git clone https://github.com/zaibix/book-reservation-system.git
+cd library-management-system
+
+2️⃣ Install dependencies
+npm install
+
+3️⃣ Setup environment variables
+Create a .env.local file in the root of the project:
+
+SUPABASE_DB=postgresql://<user>:<password>@<host>:<port>/<database>
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-random-secret
+
+
+SUPABASE_DB → Your Supabase connection string (Transaction Pooler recommended).
+
+NEXTAUTH_URL → 
+
+Local development: http://localhost:3000
+
+Production: your deployed domain
+
+NEXTAUTH_SECRET → Generate a random string:
+
+openssl rand -base64 32
+
+4️⃣ Run the project
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit 👉 http://localhost:3000
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+⚙️ Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Frontend → Next.js (App Router)
+Database → PostgreSQL (Supabase)
+Auth → NextAuth.js (Credentials + Role-based)
+ORM/Queries → Raw SQL using pg
 
-## Learn More
+📂 Features
 
-To learn more about Next.js, take a look at the following resources:
+✅ Student login & dashboard
+✅ Librarian login & dashboard
+✅ Manage books, authors, genres
+✅ Track reservations & availability
+✅ Fine calculation after due date
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+📌 Notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Works with both local development and production deployment.
 
-## Deploy on Vercel
+Ensure that Supabase database access is configured properly.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Only the server (with service role key) should interact with the database directly.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+🛠️ Development Commands
+npm run dev       # Start development server
+npm run build     # Build for production
+npm start         # Run production build
+
+
+🗄️ Database Schema Overview
+
+Main entities include:
+
+Book (id, name, isbn, genre_id)
+Genre (id, title)
+Author (id, name)
+BookAuthor (book_id, author_id) – junction table
+BookCopy (id, book_id, is_reserved)
+Reservation (id, student_id, book_copy_id, due_date, status)
+Student (id, name, email, …)
+Librarian (id, name, email, …)
+
+The full SQL schema is available in [`utils/schema.sql`](./utils/schema.sql).
+
+DBMS Project – Built by ZaibiX 🎓
